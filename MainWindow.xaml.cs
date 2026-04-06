@@ -1,11 +1,12 @@
 ﻿using NetFwTypeLib; // Ensure you have the reference added to your project
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Xml.Linq;
-using System.Linq;
 
 namespace Ronin_Portier
 {
@@ -223,6 +224,13 @@ namespace Ronin_Portier
             {
                 MessageBox.Show($"Error during removal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            // Clear the UI so no "ghost" data remains
+            ServerCombo.SelectedIndex = -1;
+            ServerCombo.Text = "";
+            txtPorts.Text = "";
+            chkTCP.IsChecked = false;
+            chkUDP.IsChecked = false;
         }
 
         //      _   _ _____ _     ____  _____ ____  ____  
@@ -275,6 +283,27 @@ namespace Ronin_Portier
             catch (Exception ex)
             {
                 WriteLog($"Failed to save servers: {ex.Message}", "Error");
+            }
+        }
+
+        private void ServerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Check if an actual GameServer object was selected
+            if (ServerCombo.SelectedItem is GameServer selected)
+            {
+                // 1. Fill the other fields normally
+                txtPorts.Text = selected.Ports;
+                chkTCP.IsChecked = selected.UseTCP;
+                chkUDP.IsChecked = selected.UseUDP;
+
+                // 2. This is the key: Force the ComboBox text to be JUST the name.
+                // We use Dispatcher because WPF sometimes tries to overwrite the text 
+                // back to the ToString() version immediately after selection.
+                Dispatcher.BeginInvoke(new Action(() => {
+                    ServerCombo.Text = selected.Name;
+                }));
+
+                WriteLog($"Loaded profile: {selected.Name}", "info");
             }
         }
 
