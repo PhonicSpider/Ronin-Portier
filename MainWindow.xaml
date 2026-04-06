@@ -1,0 +1,222 @@
+﻿<Window x:Class="Ronin_Portier.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Ronin_Portier"
+        mc:Ignorable="d"
+        Title="Ronin Portier" Height="500" Width="850" Background="Black">
+
+    <Window.Resources>
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#FF3E3E42"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="#FF555555" 
+                                BorderThickness="1" 
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FF505050"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FF007ACC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="#CC1E1E1E"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="BorderBrush" Value="#FF333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.4"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="#FF555555" 
+                                BorderThickness="1" 
+                                CornerRadius="3">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="WideDropDownCombo" TargetType="ComboBox">
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background" Value="#FF4C4C4C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="50" x:Name="ButtonColumn"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ToggleButton Grid.ColumnSpan="2" 
+                                  Background="{TemplateBinding Background}" 
+                                  BorderBrush="#FF555555" 
+                                  BorderThickness="1"
+                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="{TemplateBinding Background}" 
+                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="{TemplateBinding BorderThickness}" 
+                                        CornerRadius="5"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <TextBox x:Name="PART_EditableTextBox"
+                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                             Margin="0,0,0,0"
+                             Focusable="True"
+                             Background="Transparent"
+                             Foreground="{TemplateBinding Foreground}"
+                             BorderThickness="0"
+                             IsReadOnly="{TemplateBinding IsReadOnly}"
+                             FontSize="{TemplateBinding FontSize}"
+                             FontFamily="{TemplateBinding FontFamily}"/>
+
+                            <Border Grid.Column="1" Background="#FF3E3E42" CornerRadius="0,5,5,0" 
+                            BorderBrush="#FF555555" BorderThickness="1,0,0,0" IsHitTestVisible="False">
+                                <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" 
+                           AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Border x:Name="DropDownBorder" Background="#FF1E1E1E" BorderBrush="#FF555555" 
+                                BorderThickness="1" CornerRadius="5" 
+                                MaxHeight="{TemplateBinding MaxDropDownHeight}" 
+                                MinWidth="{TemplateBinding ActualWidth}">
+                                    <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
+                            </Trigger>
+                            <Trigger Property="IsGrouping" Value="true">
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.Background>
+            <ImageBrush ImageSource="/Ronin Logo.jpg" Opacity="0.335"/>
+        </Grid.Background>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,30,10,10">
+
+            <Border Style="{StaticResource CardBorder}" Width="450" Height="Auto" VerticalAlignment="Top">
+                <StackPanel Margin="25">
+                    <Label Content="SERVER CONFIGURATION" Foreground="#FFFC6617" 
+                       FontFamily="Segoe UI Semibold" FontSize="16" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Server Name" Foreground="White" Opacity="0.7" FontSize="18" Margin="0,0,0,8"/>
+                    <ComboBox x:Name="ServerCombo" 
+                        Style="{StaticResource WideDropDownCombo}"
+                        IsEditable="True" 
+                        Height="45" 
+                        FontSize="16" 
+                        FontFamily="Segoe UI" 
+                        VerticalContentAlignment="Center">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="10,5"/>
+                                <Setter Property="Height" Value="35"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Ports" Foreground="White" Opacity="0.7" FontSize="18" Margin="0,25,0,8"/>
+                    <TextBox x:Name="txtPorts" Height="39" Background="#FF2D2D30" Foreground="White" 
+                         BorderThickness="0" Padding="10,0" FontSize="16" VerticalContentAlignment="Center"
+                         ToolTip="Options: Single, Separated by comma, or range (i.e 1234; 1234,1235; 1234-1235)"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}" Width="350" Height="270" VerticalAlignment="Top">
+                <StackPanel Margin="25">
+                    <Label Content="NETWORK &amp; ACTIONS" Foreground="#FFFC6617" 
+                       FontFamily="Segoe UI Semibold" FontSize="16" Margin="0,0,0,15"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,30" HorizontalAlignment="Center">
+                        <CheckBox x:Name="chkTCP" Content="TCP" Foreground="White" Margin="0,0,90,50" VerticalAlignment="Center">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                        <CheckBox x:Name="chkUDP" Content="UDP" Foreground="White" Margin="0,0,0,50" VerticalAlignment="Center">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </StackPanel>
+
+                    <UniformGrid Columns="2" Height="50">
+                        <Button x:Name="ApplyBtn" Content="APPLY" Click="btnApply_Click" 
+                            Style="{StaticResource ModernButton}" Margin="0,1,8,0" FontSize="20"/>
+                        <Button x:Name="RemoveBtn" Content="REMOVE" Click="btnRemove_Click" 
+                            Style="{StaticResource ModernButton}" Margin="8,0,0,0" FontSize="20"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="20,10,20,20">
+            <RichTextBox x:Name="ConsoleRTB" Background="Transparent" Foreground="#FF00FF00" 
+                     BorderThickness="0" FontFamily="Consolas" FontSize="13" Padding="15" 
+                     VerticalScrollBarVisibility="Auto">
+                <FlowDocument>
+                    <Paragraph>Ready for Ronin Command...</Paragraph>
+                </FlowDocument>
+            </RichTextBox>
+        </Border>
+    </Grid>
+</Window>
