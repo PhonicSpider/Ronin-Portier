@@ -15,6 +15,9 @@ namespace Ronin_Portier
         // A list that WPF can "watch" for changes
         private System.Collections.ObjectModel.ObservableCollection<GameServer> _serverList;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -48,7 +51,7 @@ namespace Ronin_Portier
             ServerCombo.ItemsSource = _serverList;
 
             // Selection Change Logic
-            ServerCombo.SelectionChanged += (s, e) => {
+            /*ServerCombo.SelectionChanged += (s, e) => {
                 if (ServerCombo.SelectedItem is GameServer selected)
                 {
                     // This ensures the editable text box only shows the Name
@@ -60,7 +63,7 @@ namespace Ronin_Portier
 
                     WriteLog($"Selected Profile: {selected.Name}", "info");
                 }
-            };
+            };*/
 
             WriteLog("Ronin Portier initialized. Ready to manage firewall rules.", "info");
         }
@@ -288,19 +291,24 @@ namespace Ronin_Portier
 
         private void ServerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Check if an actual GameServer object was selected
-            if (ServerCombo.SelectedItem is GameServer selected)
+            // 1. Only run if an item was actually picked (prevents clearing while typing)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is GameServer selected)
             {
-                // 1. Fill the other fields normally
+                // 2. Fill the helper fields
                 txtPorts.Text = selected.Ports;
                 chkTCP.IsChecked = selected.UseTCP;
                 chkUDP.IsChecked = selected.UseUDP;
 
-                // 2. This is the key: Force the ComboBox text to be JUST the name.
-                // We use Dispatcher because WPF sometimes tries to overwrite the text 
-                // back to the ToString() version immediately after selection.
+                // 3. Force the ComboBox text to show ONLY the Name
+                // We use Dispatcher to wait until WPF finishes its default selection UI update
                 Dispatcher.BeginInvoke(new Action(() => {
                     ServerCombo.Text = selected.Name;
+
+                    // Optional: Move cursor to the end so you can edit immediately
+                    if (ServerCombo.Template.FindName("PART_EditableTextBox", ServerCombo) is TextBox tb)
+                    {
+                        tb.CaretIndex = tb.Text.Length;
+                    }
                 }));
 
                 WriteLog($"Loaded profile: {selected.Name}", "info");

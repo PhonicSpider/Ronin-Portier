@@ -165,7 +165,8 @@
                         Height="45" 
                         FontSize="16" 
                         FontFamily="Segoe UI" 
-                        VerticalContentAlignment="Center">
+                        VerticalContentAlignment="Center"
+                        SelectionChanged="ServerCombo_SelectionChanged">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="Padding" Value="10,5"/>
