@@ -14,7 +14,7 @@ namespace Ronin_Portier
     {
         // A list that WPF can "watch" for changes
         private System.Collections.ObjectModel.ObservableCollection<GameServer> _serverList;
-
+        private bool _isUpdatingSelection = false; // Flag to prevent recursive updates when changing selection programmatically
         /// <summary>
         /// 
         /// </summary>
@@ -49,22 +49,7 @@ namespace Ronin_Portier
 
             // Link the list to the UI
             ServerCombo.ItemsSource = _serverList;
-
-            // Selection Change Logic
-            /*ServerCombo.SelectionChanged += (s, e) => {
-                if (ServerCombo.SelectedItem is GameServer selected)
-                {
-                    // This ensures the editable text box only shows the Name
-                    ServerCombo.Text = selected.Name;
-
-                    txtPorts.Text = selected.Ports;
-                    chkTCP.IsChecked = selected.UseTCP;
-                    chkUDP.IsChecked = selected.UseUDP;
-
-                    WriteLog($"Selected Profile: {selected.Name}", "info");
-                }
-            };*/
-
+            ResetFields(); // Clear fields on startup to prevent confusion with placeholder text
             WriteLog("Ronin Portier initialized. Ready to manage firewall rules.", "info");
         }
 
@@ -160,6 +145,12 @@ namespace Ronin_Portier
             {
                 MessageBox.Show($"Error applying firewall rules: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            // Only reset if you aren't planning on making more immediate changes
+            if (MessageBox.Show("Clear fields for next entry?", "Done", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                ResetFields();
+            }
         }
 
         // Remove Button Click Handler - Removes rules based on the name entered in the txtName TextBox (Handles both TCP and UDP variants)
@@ -229,11 +220,17 @@ namespace Ronin_Portier
             }
 
             // Clear the UI so no "ghost" data remains
-            ServerCombo.SelectedIndex = -1;
+            /*ServerCombo.SelectedIndex = -1;
             ServerCombo.Text = "";
             txtPorts.Text = "";
             chkTCP.IsChecked = false;
-            chkUDP.IsChecked = false;
+            chkUDP.IsChecked = false;*/
+
+            // Only reset if you aren't planning on making more immediate changes
+            if (MessageBox.Show("Clear fields for next entry?", "Done", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                ResetFields();
+            }
         }
 
         //      _   _ _____ _     ____  _____ ____  ____  
@@ -291,6 +288,9 @@ namespace Ronin_Portier
 
         private void ServerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // If we are currently deleting or resetting, don't run this logic!
+            if (_isUpdatingSelection) return;
+
             // 1. Only run if an item was actually picked (prevents clearing while typing)
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is GameServer selected)
             {
@@ -313,6 +313,19 @@ namespace Ronin_Portier
 
                 WriteLog($"Loaded profile: {selected.Name}", "info");
             }
+        }
+
+        // Reset fields after an action to prevent confusion and prepare for the next entry (Called after applying or removing rules)
+        private void ResetFields()
+        {
+            _isUpdatingSelection = true;        // Set flag to prevent triggering selection changed logic
+            ServerCombo.SelectedIndex = -1;     // Clear selection to prevent confusion with the dropdown's editable text
+            ServerCombo.Text = string.Empty;    // Clear the text to remove any "ghost" data
+            txtPorts.Text = string.Empty;       // Clear the ports field
+            chkTCP.IsChecked = false;           // Uncheck TCP
+            chkUDP.IsChecked = false;           // Uncheck UDP
+            _isUpdatingSelection = false;       // Reset flag after updates are done
+            ServerCombo.Focus();                // Set focus back to the Name box for the next entry
         }
 
         // Write log messages to the RichTextBox with timestamps and color coding based on the log level
