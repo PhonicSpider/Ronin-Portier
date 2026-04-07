@@ -212,7 +212,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="20,10,20,20">
             <RichTextBox x:Name="ConsoleRTB" Background="Transparent" Foreground="#FF00FF00" 
-                     BorderThickness="0" FontFamily="Consolas" FontSize="14" Padding="15" 
+                     BorderThickness="0" FontFamily="Consolas" FontSize="15" FontWeight="Medium" Padding="15" 
                      VerticalScrollBarVisibility="Auto">
                 <FlowDocument>
                     <Paragraph>Ready for Ronin Command...</Paragraph>
