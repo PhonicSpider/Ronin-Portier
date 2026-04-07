@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="assets\images\Ronin Logo.jpg" />
     <None Remove="Ronin Logo.jpg" />
   </ItemGroup>
 
@@ -27,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="assets\images\Ronin Logo.jpg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Ronin Logo.jpg" />
   </ItemGroup>
 
