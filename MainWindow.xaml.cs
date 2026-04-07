@@ -138,7 +138,7 @@ namespace Ronin_Portier
                         UseUDP = chkUDP.IsChecked ?? false
                     });
                     SaveServers();
-                    WriteLog($"Added '{currentName}' to saved servers.", "Info");
+                    WriteLog($"Added '{currentName}' to saved servers.", "success");
                 }
             }
             catch (Exception ex)
@@ -194,7 +194,7 @@ namespace Ronin_Portier
                     try
                     {
                         fwPolicy2.Rules.Remove(name);
-                        WriteLog($"Rule '{name}' removed successfully.", "info");
+                        WriteLog($"Rule '{name}' removed successfully.", "success");
                     }
                     catch (Exception ex)
                     {
@@ -208,7 +208,7 @@ namespace Ronin_Portier
                 {
                     _serverList.Remove(serverInList);
                     SaveServers(); // Update the JSON file
-                    WriteLog($"Removed '{ruleName}' from the saved server list.", "info");
+                    WriteLog($"Removed '{ruleName}' from the saved server list.", "success");
                 }
                 // --- END DROP-DOWN REMOVAL LOGIC ---
 
@@ -337,7 +337,8 @@ namespace Ronin_Portier
             
             paragraph.Foreground = level.ToLower()
             switch {
-                "info" => System.Windows.Media.Brushes.Green,
+                "info" => System.Windows.Media.Brushes.White,
+                "success" => System.Windows.Media.Brushes.LightGreen,
                 "warning" => System.Windows.Media.Brushes.Orange,
                 "error" => System.Windows.Media.Brushes.Red,
                 _ => System.Windows.Media.Brushes.Black,
