@@ -18,14 +18,14 @@ While this can be used and was primarily built to simplify the set-up for game s
 ## 🚀 Quick Start
 1. **Download:** Go to the [Releases](https://github.com/PhonicSpider/Ronin-Portier/releases/latest) page and download the latest `Ronin_Portier_V*.zip`.
 2. **Extract:** Unzip the contents to a folder of your choice.
-3. **Run as Admin:** Right-click `Ronin Portier.exe` → **Run as administrator**. Click **YES** on the UAC prompt and enjoy.
+3. **Run as Admin:** Right-click `Ronin Portier.exe` -> **Run as administrator**. Click **YES** on the UAC prompt and enjoy.
     * *Note: Administrative privileges are required to read and modify Windows Firewall rules.*
-    * *This is a self-contained build — no .NET Runtime install needed. Keep every file in the extracted folder together.*
+    * *This is a self-contained build - no .NET Runtime install needed. Keep every file in the extracted folder together.*
 
 ---
 
 ## 🛠 Features
-* **Firewall Rules browser:** See every Windows Firewall rule on your system in one grid — name, direction, protocol, ports, profile, and (if something's listening) the live process using that port. Disabled and wildcard/no-port rules are hidden by default; a "Show all rules" toggle reveals everything.
+* **Firewall Rules browser:** See every Windows Firewall rule on your system in one grid - name, direction, protocol, ports, profile, and (if something's listening) the live process using that port. Disabled and wildcard/no-port rules are hidden by default; a "Show all rules" toggle reveals everything.
 * **Portier Ports tab:** A separate view scoped to just the profiles Portier itself manages, so your own game-server rules don't get lost in the noise of every other rule on the system.
 * **Search:** Find a rule by name, by a specific port number (even one buried inside a range like `27015-27030`), or by the name of whatever process is currently using a port.
 * **Live port-to-process lookup:** See which running program is actually bound to a port, refreshed on load or with the Refresh button.
@@ -33,14 +33,14 @@ While this can be used and was primarily built to simplify the set-up for game s
 * **Protocol Support:** Toggle TCP, UDP, or both, plus an optional matching outbound rule.
 * **Port conflict detection:** Warns you before applying if your ports overlap with an existing rule Portier doesn't own.
 * **Duplicate Profile:** Clone a saved profile with one click.
-* **Foreign rule management:** Select a rule Portier didn't create to inspect it, use it as a template for a new profile, or remove it — removal always asks for confirmation and tells you which process (if any) will be affected.
+* **Foreign rule management:** Select a rule Portier didn't create to inspect it, use it as a template for a new profile, or remove it - removal always asks for confirmation and tells you which process (if any) will be affected.
 * **Console Logging:** Real-time, color-coded log of every action taken.
 
 ---
 
 ## 📖 How to Use
-1. **Add a rule:** With nothing selected, the right panel shows **Add New Rule** — enter a name and ports, pick TCP/UDP (and outbound if needed), then **Apply**.
-2. **Edit or remove a saved profile:** Switch to the **Portier Ports** tab and select a row — the panel becomes an editable form with **Remove** and **Duplicate Profile** buttons.
+1. **Add a rule:** With nothing selected, the right panel shows **Add New Rule** - enter a name and ports, pick TCP/UDP (and outbound if needed), then **Apply**.
+2. **Edit or remove a saved profile:** Switch to the **Portier Ports** tab and select a row - the panel becomes an editable form with **Remove** and **Duplicate Profile** buttons.
 3. **Browse everything on the system:** The **Firewall Rules** tab lists every rule Windows knows about. Selecting a rule Portier doesn't own shows a read-only inspector with **Use as Template** and **Remove** options.
 4. **Search:** Type a rule name, a port number, or a process name into the search bar at the top to filter whichever tab is active.
 
