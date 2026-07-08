@@ -1,31 +1,35 @@
 using NetFwTypeLib;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
-
-// Disambiguate types that clash with System.Windows.Forms equivalents
-using MessageBox = System.Windows.MessageBox;
-using TextBox = System.Windows.Controls.TextBox;
 
 namespace Ronin_Portier
 {
     public partial class MainWindow : Window
     {
         private System.Collections.ObjectModel.ObservableCollection<GameServer> _serverList;
-        private bool _isUpdatingSelection = false;
-        private System.Windows.Forms.NotifyIcon _trayIcon;
+        private System.Collections.ObjectModel.ObservableCollection<FirewallRuleInfo> _allRules
+            = new System.Collections.ObjectModel.ObservableCollection<FirewallRuleInfo>();
+
+        private ICollectionView _allRulesView;
+        private ICollectionView _portierView;
+
+        private Dictionary<int, string> _portProcessMap = new Dictionary<int, string>();
+        private GameServer _editingServer;
+        private FirewallRuleInfo _selectedForeignRule;
 
         public MainWindow()
         {
             InitializeComponent();
             ConsoleRTB.Document.Blocks.Clear();
-
-            SetupTrayIcon();
 
             string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "servers.json");
 
@@ -49,10 +53,18 @@ namespace Ronin_Portier
                 _serverList = new System.Collections.ObjectModel.ObservableCollection<GameServer>();
             }
 
-            ServerCombo.ItemsSource = _serverList;
-            ResetFields();
-            RefreshAllStatuses();
+            _allRulesView = CollectionViewSource.GetDefaultView(_allRules);
+            _allRulesView.Filter = FilterRule;
+            AllRulesGrid.ItemsSource = _allRulesView;
+
+            _portierView = CollectionViewSource.GetDefaultView(_serverList);
+            _portierView.Filter = FilterServer;
+            PortierGrid.ItemsSource = _portierView;
+
+            ShowAddPanel();
             WriteLog("Ronin Portier initialized. Ready to manage firewall rules.", "info");
+
+            _ = RefreshAllAsync();
         }
 
         //      ____  _   _ _____ _____ ___  _   _ ____
@@ -65,8 +77,8 @@ namespace Ronin_Portier
         {
             try
             {
-                string currentName = ServerCombo.Text;
-                string currentPorts = txtPorts.Text.Replace(" ", "");
+                string currentName = txtRuleName.Text.Trim();
+                string currentPorts = txtRulePorts.Text.Replace(" ", "");
 
                 if (string.IsNullOrWhiteSpace(currentName) || string.IsNullOrWhiteSpace(currentPorts))
                 {
@@ -181,28 +193,31 @@ namespace Ronin_Portier
                     WriteLog($"Added '{currentName}' to saved servers.", "success");
                 }
 
-                UpdateStatusBar();
+                ShowAddPanel();
+                RefreshListsOnly();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error applying firewall rules: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            if (MessageBox.Show("Clear fields for next entry?", "Done", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                ResetFields();
         }
 
         public void btnRemove_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                string ruleName = ServerCombo.Text;
+                string ruleName = txtRuleName.Text.Trim();
 
                 if (string.IsNullOrWhiteSpace(ruleName))
                 {
-                    MessageBox.Show("Please enter a Rule Name to remove.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please select a profile to remove.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
+
+                var proceed = MessageBox.Show(
+                    $"Remove all firewall rules and the saved profile for '{ruleName}'?",
+                    "Confirm Removal", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (proceed != MessageBoxResult.Yes) return;
 
                 Type fwPolicy2Type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
                 INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(fwPolicy2Type);
@@ -245,22 +260,18 @@ namespace Ronin_Portier
                     WriteLog($"Removed '{ruleName}' from saved profiles.", "success");
                 }
 
-                UpdateStatusBar();
-                MessageBox.Show("Firewall rules and saved configuration removed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowAddPanel();
+                RefreshListsOnly();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error during removal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            if (MessageBox.Show("Clear fields for next entry?", "Done", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                ResetFields();
         }
 
         private void btnDuplicate_Click(object sender, RoutedEventArgs e)
         {
-            string currentName = ServerCombo.Text;
-            var source = _serverList.FirstOrDefault(s => s.Name == currentName);
+            var source = _editingServer ?? _serverList.FirstOrDefault(s => s.Name == txtRuleName.Text.Trim());
 
             if (source == null)
             {
@@ -284,8 +295,56 @@ namespace Ronin_Portier
             });
 
             SaveServers();
-            UpdateStatusBar();
+            RefreshListsOnly();
             WriteLog($"Duplicated '{source.Name}' as '{newName}'.", "success");
+        }
+
+        private void btnUseAsTemplate_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedForeignRule == null) return;
+            var template = _selectedForeignRule;
+
+            AllRulesGrid.SelectedItem = null;
+            ShowAddPanel();
+            txtRuleName.Text = template.Name;
+            txtRulePorts.Text = template.LocalPorts == "*" ? "" : template.LocalPorts;
+            chkTCP.IsChecked = template.Protocol == "TCP";
+            chkUDP.IsChecked = template.Protocol == "UDP";
+            WriteLog($"Loaded '{template.Name}' as a template for a new rule.", "info");
+        }
+
+        private void btnRemoveForeign_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedForeignRule == null) return;
+            var rule = _selectedForeignRule;
+
+            string processInfo = string.IsNullOrEmpty(rule.ProcessName)
+                ? "No process is currently listening on this port."
+                : $"Process '{rule.ProcessName}' is currently using this port and will stop working.";
+
+            var result = MessageBox.Show(
+                $"Remove firewall rule '{rule.Name}' (port(s) {rule.LocalPorts})?\n\n{processInfo}\n\n" +
+                "This will permanently remove the rule unless it is recreated and the affected process is restarted.",
+                "Confirm Rule Removal", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                Type fwPolicy2Type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+                INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(fwPolicy2Type);
+                fwPolicy2.Rules.Remove(rule.Name);
+                WriteLog($"Removed firewall rule '{rule.Name}'.", "success");
+            }
+            catch (Exception ex)
+            {
+                WriteLog($"Error removing rule '{rule.Name}': {ex.Message}", "error");
+                MessageBox.Show($"Error removing rule: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            ShowAddPanel();
+            RefreshListsOnly();
         }
 
         //      _   _ _____ _     ____  _____ ____  ____
@@ -332,6 +391,107 @@ namespace Ronin_Portier
             }
         }
 
+        // Full refresh: re-scans live listening ports (background thread) then re-enumerates
+        // Windows Firewall rules (must stay on the UI/STA thread — these are COM objects).
+        private async Task RefreshAllAsync()
+        {
+            SearchBarStatus.Text = "Scanning firewall rules and live ports...";
+            RefreshBtn.IsEnabled = false;
+            try
+            {
+                _portProcessMap = await Task.Run(() => PortLookup.GetPortProcessMap());
+                RefreshListsOnly();
+                SearchBarStatus.Text = $"{_allRules.Count} rule(s) shown  •  updated {DateTime.Now:HH:mm:ss}";
+            }
+            catch (Exception ex)
+            {
+                WriteLog($"Error scanning firewall/ports: {ex.Message}", "error");
+                SearchBarStatus.Text = "Scan failed. See console.";
+            }
+            finally
+            {
+                RefreshBtn.IsEnabled = true;
+            }
+        }
+
+        // Cheap refresh that reuses the last live-port scan — used after Apply/Remove/Duplicate
+        // so those actions feel instant instead of re-scanning the whole system every time.
+        private void RefreshListsOnly()
+        {
+            RefreshFirewallRulesList(_portProcessMap);
+            RefreshAllStatuses();
+            UpdateStatusBar();
+            _allRulesView?.Refresh();
+            _portierView?.Refresh();
+        }
+
+        // Enumerate every Windows Firewall rule into the "Firewall Rules" grid, tagging which
+        // ones Portier owns and which live process (if any) is currently using each rule's ports.
+        private void RefreshFirewallRulesList(Dictionary<int, string> portMap)
+        {
+            _allRules.Clear();
+            try
+            {
+                Type fwPolicy2Type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
+                INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(fwPolicy2Type);
+                bool showAll = chkShowAll.IsChecked == true;
+
+                foreach (INetFwRule rule in fwPolicy2.Rules)
+                {
+                    try
+                    {
+                        bool hasPorts = !string.IsNullOrWhiteSpace(rule.LocalPorts) && rule.LocalPorts != "*";
+                        if (!showAll && (!rule.Enabled || !hasPorts)) continue;
+
+                        _allRules.Add(new FirewallRuleInfo
+                        {
+                            Name = rule.Name ?? "",
+                            Direction = rule.Direction == NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN ? "In" : "Out",
+                            Protocol = ProtocolName(rule.Protocol),
+                            LocalPorts = rule.LocalPorts ?? "*",
+                            Profile = ProfileName(rule.Profiles),
+                            Enabled = rule.Enabled,
+                            IsPortierManaged = rule.Grouping == "Ronin Portier Rules",
+                            ProcessName = hasPorts ? FindProcessForPorts(rule.LocalPorts, portMap) : ""
+                        });
+                    }
+                    catch { /* skip rules that throw on read (some store-app rules do) */ }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog($"Could not enumerate firewall rules: {ex.Message}", "warning");
+            }
+        }
+
+        private static string ProtocolName(int protocol) => protocol switch
+        {
+            6 => "TCP",
+            17 => "UDP",
+            256 => "Any",
+            _ => protocol.ToString()
+        };
+
+        private static string ProfileName(int profiles)
+        {
+            if (profiles == 7 || profiles == 0x7FFFFFFF) return "All";
+            var parts = new List<string>();
+            if ((profiles & 1) != 0) parts.Add("Domain");
+            if ((profiles & 2) != 0) parts.Add("Private");
+            if ((profiles & 4) != 0) parts.Add("Public");
+            return parts.Count > 0 ? string.Join("/", parts) : profiles.ToString();
+        }
+
+        // Finds the first live process bound to any port within the given port string.
+        private string FindProcessForPorts(string portsString, Dictionary<int, string> portMap)
+        {
+            if (portMap == null || portMap.Count == 0 || string.IsNullOrWhiteSpace(portsString)) return "";
+            foreach (var p in ExpandPorts(portsString))
+                if (portMap.TryGetValue(p, out var name) && !string.IsNullOrEmpty(name))
+                    return name;
+            return "";
+        }
+
         // Check if a profile's rules currently exist in Windows Firewall (efficient single-pass)
         private void RefreshAllStatuses()
         {
@@ -349,20 +509,21 @@ namespace Ronin_Portier
                 }
 
                 foreach (var server in _serverList)
+                {
                     server.IsActive = activeNames.Any(n => n.StartsWith(server.Name, StringComparison.OrdinalIgnoreCase));
+                    server.ProcessName = FindProcessForPorts(server.Ports, _portProcessMap);
+                }
             }
             catch (Exception ex)
             {
                 WriteLog($"Could not check firewall status: {ex.Message}", "warning");
             }
-
-            UpdateStatusBar();
         }
 
         private void UpdateStatusBar()
         {
             int active = _serverList.Count(s => s.IsActive);
-            StatusBarText.Text = $"Profiles: {_serverList.Count}  |  Active: {active}";
+            StatusBarText.Text = $"Profiles: {_serverList.Count}  |  Active: {active}  |  Firewall Rules: {_allRules.Count}";
         }
 
         // Check if any of the ports being applied conflict with existing (non-Ronin) rules
@@ -414,85 +575,141 @@ namespace Ronin_Portier
             return result;
         }
 
-        // Set up system tray icon — app minimizes to tray on close
-        private void SetupTrayIcon()
+        //      _   _ ___
+        //     | | | |_ _|
+        //     | | | || |
+        //     | |_| || |
+        //      \___/|___|
+
+        private bool FilterRule(object obj)
         {
-            _trayIcon = new System.Windows.Forms.NotifyIcon();
-
-            try
-            {
-                var iconStream = System.Windows.Application.GetResourceStream(
-                    new Uri("pack://application:,,,/assets/images/RoninLogo.ico"))?.Stream;
-                if (iconStream != null)
-                    _trayIcon.Icon = new System.Drawing.Icon(iconStream);
-            }
-            catch { /* icon not critical */ }
-
-            _trayIcon.Text = "Ronin Portier";
-            _trayIcon.Visible = false;
-
-            var menu = new System.Windows.Forms.ContextMenuStrip();
-            menu.Items.Add("Open Ronin Portier", null, (s, ev) => RestoreFromTray());
-            menu.Items.Add("-");
-            menu.Items.Add("Exit", null, (s, ev) =>
-            {
-                _trayIcon.Dispose();
-                System.Windows.Application.Current.Shutdown();
-            });
-            _trayIcon.ContextMenuStrip = menu;
-            _trayIcon.DoubleClick += (s, ev) => RestoreFromTray();
+            if (obj is not FirewallRuleInfo r) return false;
+            return MatchesSearch(r.Name, r.LocalPorts, r.ProcessName);
         }
 
-        private void RestoreFromTray()
+        private bool FilterServer(object obj)
         {
-            Show();
-            WindowState = WindowState.Normal;
-            Activate();
-            _trayIcon.Visible = false;
+            if (obj is not GameServer s) return false;
+            return MatchesSearch(s.Name, s.Ports, s.ProcessName);
         }
 
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        private bool MatchesSearch(string name, string ports, string process)
         {
-            e.Cancel = true;
-            Hide();
-            _trayIcon.Visible = true;
-            _trayIcon.ShowBalloonTip(2000, "Ronin Portier",
-                "Running in background. Double-click to restore.", System.Windows.Forms.ToolTipIcon.Info);
+            string query = txtSearch?.Text?.Trim() ?? "";
+            if (query.Length == 0) return true;
+
+            if (!string.IsNullOrEmpty(name) && name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (!string.IsNullOrEmpty(ports) && ports.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (!string.IsNullOrEmpty(process) && process.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+
+            if (int.TryParse(query, out int port) && !string.IsNullOrWhiteSpace(ports))
+                return ExpandPorts(ports).Contains(port);
+
+            return false;
         }
 
-        private void ServerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_isUpdatingSelection) return;
+            _allRulesView?.Refresh();
+            _portierView?.Refresh();
+        }
 
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is GameServer selected)
+        private void chkShowAll_Changed(object sender, RoutedEventArgs e)
+        {
+            RefreshFirewallRulesList(_portProcessMap);
+            UpdateStatusBar();
+            _allRulesView?.Refresh();
+        }
+
+        private void RefreshBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _ = RefreshAllAsync();
+        }
+
+        // Guard against DataGrid selection changes bubbling up as if the tab itself changed
+        // (Selector.SelectionChanged bubbles through the visual tree in WPF).
+        private void LeftTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ReferenceEquals(e.OriginalSource, LeftTabs)) return;
+            AllRulesGrid.SelectedItem = null;
+            PortierGrid.SelectedItem = null;
+            ShowAddPanel();
+        }
+
+        private void AllRulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AllRulesGrid.SelectedItem is not FirewallRuleInfo rule) return;
+            PortierGrid.SelectedItem = null;
+
+            if (rule.IsPortierManaged)
             {
-                txtPorts.Text = selected.Ports;
-                chkTCP.IsChecked = selected.UseTCP;
-                chkUDP.IsChecked = selected.UseUDP;
-                chkOutbound.IsChecked = selected.UseOutbound;
-
-                Dispatcher.BeginInvoke(new Action(() =>
+                var match = _serverList.FirstOrDefault(s => rule.Name.StartsWith(s.Name, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
                 {
-                    ServerCombo.Text = selected.Name;
-                    if (ServerCombo.Template.FindName("PART_EditableTextBox", ServerCombo) is TextBox tb)
-                        tb.CaretIndex = tb.Text.Length;
-                }));
-
-                WriteLog($"Loaded profile: {selected.Name}", "info");
+                    ShowPortierEdit(match);
+                    return;
+                }
             }
+
+            ShowForeignRule(rule);
         }
 
-        private void ResetFields()
+        private void PortierGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _isUpdatingSelection = true;
-            ServerCombo.SelectedIndex = -1;
-            ServerCombo.Text = string.Empty;
-            txtPorts.Text = string.Empty;
+            if (PortierGrid.SelectedItem is not GameServer server) return;
+            AllRulesGrid.SelectedItem = null;
+            ShowPortierEdit(server);
+        }
+
+        private void ShowAddPanel()
+        {
+            _editingServer = null;
+            _selectedForeignRule = null;
+
+            AddEditPanel.Visibility = Visibility.Visible;
+            ForeignRulePanel.Visibility = Visibility.Collapsed;
+
+            AddEditHeader.Text = "ADD NEW RULE";
+            txtRuleName.Text = "";
+            txtRulePorts.Text = "";
             chkTCP.IsChecked = false;
             chkUDP.IsChecked = false;
             chkOutbound.IsChecked = false;
-            _isUpdatingSelection = false;
-            ServerCombo.Focus();
+            PortierEditButtons.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowPortierEdit(GameServer server)
+        {
+            _editingServer = server;
+            _selectedForeignRule = null;
+
+            AddEditPanel.Visibility = Visibility.Visible;
+            ForeignRulePanel.Visibility = Visibility.Collapsed;
+
+            AddEditHeader.Text = "EDIT PROFILE";
+            txtRuleName.Text = server.Name;
+            txtRulePorts.Text = server.Ports;
+            chkTCP.IsChecked = server.UseTCP;
+            chkUDP.IsChecked = server.UseUDP;
+            chkOutbound.IsChecked = server.UseOutbound;
+            PortierEditButtons.Visibility = Visibility.Visible;
+
+            WriteLog($"Loaded profile: {server.Name}", "info");
+        }
+
+        private void ShowForeignRule(FirewallRuleInfo rule)
+        {
+            _editingServer = null;
+            _selectedForeignRule = rule;
+
+            AddEditPanel.Visibility = Visibility.Collapsed;
+            ForeignRulePanel.Visibility = Visibility.Visible;
+
+            ForeignName.Text = rule.Name;
+            ForeignDetails.Text = $"{rule.Direction}bound  •  {rule.Protocol}  •  Port(s) {rule.LocalPorts}  •  {rule.Profile}";
+            ForeignProcess.Text = string.IsNullOrEmpty(rule.ProcessName)
+                ? "No process is currently listening on this port."
+                : $"Process '{rule.ProcessName}' is currently using this port.";
         }
 
         private void WriteLog(string message, string level)
@@ -522,6 +739,9 @@ namespace Ronin_Portier
 
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsActive { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string ProcessName { get; set; } = "";
 
         [System.Text.Json.Serialization.JsonIgnore]
         public string StatusIcon => IsActive ? "🟢" : "⚫";

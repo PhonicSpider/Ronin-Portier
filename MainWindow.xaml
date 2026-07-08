@@ -5,41 +5,48 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ronin_Portier"
         mc:Ignorable="d"
-        Title="Ronin Portier" Height="560" Width="850" Background="Black" Icon="pack://application:,,,/assets/images/RoninLogo.ico">
+        Title="Ronin Portier" Height="720" Width="1150"
+        MinHeight="560" MinWidth="900"
+        Background="#0A0A0A" Icon="pack://application:,,,/assets/images/RoninLogo.ico">
 
     <Window.Resources>
 
-        <!-- Default gray button -->
-        <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#FF3E3E42"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}"
-                                BorderBrush="#FF555555" BorderThickness="1" CornerRadius="5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF505050"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF007ACC"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <!-- ── Ronin brand colours (shared with Ronin Disk Manager) ──────────── -->
+        <SolidColorBrush x:Key="Ronin.Orange"       Color="#E06020"/>
+        <SolidColorBrush x:Key="Ronin.OrangeDim"    Color="#7A3010"/>
+        <SolidColorBrush x:Key="Ronin.Cyan"         Color="#00C0D8"/>
+        <SolidColorBrush x:Key="Ronin.CyanBright"   Color="#00D8F0"/>
+        <SolidColorBrush x:Key="Ronin.CyanDim"      Color="#2A7A8A"/>
+        <SolidColorBrush x:Key="Ronin.Surface"      Color="#0E0E0E"/>
+        <SolidColorBrush x:Key="Ronin.PanelBg"      Color="#0B0507"/>
+        <SolidColorBrush x:Key="Ronin.Border"       Color="#3A0A0A"/>
+        <SolidColorBrush x:Key="Ronin.BorderSubtle" Color="#1A0606"/>
+        <SolidColorBrush x:Key="Ronin.BorderHover"  Color="#6A1010"/>
+        <SolidColorBrush x:Key="Ronin.TextDim"      Color="#505050"/>
+        <SolidColorBrush x:Key="Ronin.TextMid"      Color="#909090"/>
+        <SolidColorBrush x:Key="Ronin.TextBright"   Color="#CFCFCF"/>
+        <SolidColorBrush x:Key="Ronin.ConsoleBg"    Color="#060606"/>
+        <SolidColorBrush x:Key="Ronin.SelectBg"     Color="#1A0808"/>
+        <SolidColorBrush x:Key="Ronin.HoverBg"      Color="#131313"/>
+
+        <!-- ── Section header label ───────────────────────────────────────── -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Ronin.Orange}"/>
+            <Setter Property="Margin"     Value="0,16,0,6"/>
         </Style>
 
-        <!-- Orange apply button -->
+        <!-- ── Compact flag checkbox ──────────────────────────────────────── -->
+        <Style x:Key="FlagCheck" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="Foreground" Value="{StaticResource Ronin.TextBright}"/>
+            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="Margin"     Value="0,4,0,4"/>
+        </Style>
+
+        <!-- ── Buttons ─────────────────────────────────────────────────────── -->
         <Style x:Key="ApplyButton" TargetType="Button">
-            <Setter Property="Background" Value="#FFFC6617"/>
+            <Setter Property="Background" Value="{StaticResource Ronin.Orange}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="FontSize" Value="14"/>
@@ -48,7 +55,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                BorderBrush="#FFDD5500" BorderThickness="1" CornerRadius="5">
+                                BorderBrush="{StaticResource Ronin.OrangeDim}" BorderThickness="1" CornerRadius="5">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -65,7 +72,6 @@
             </Setter>
         </Style>
 
-        <!-- Red danger button -->
         <Style x:Key="DangerButton" TargetType="Button">
             <Setter Property="Background" Value="#FF8B2020"/>
             <Setter Property="Foreground" Value="White"/>
@@ -93,10 +99,9 @@
             </Setter>
         </Style>
 
-        <!-- Subtle outline button (duplicate) -->
         <Style x:Key="OutlineButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FFAAAAAA"/>
+            <Setter Property="Foreground" Value="{StaticResource Ronin.TextMid}"/>
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -104,13 +109,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                BorderBrush="#FF555555" BorderThickness="1" CornerRadius="5">
+                                BorderBrush="{StaticResource Ronin.Border}" BorderThickness="1" CornerRadius="5">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF3E3E42"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#FF888888"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource Ronin.HoverBg}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource Ronin.BorderHover}"/>
                                 <Setter Property="Cursor" Value="Hand"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
@@ -122,210 +127,450 @@
             </Setter>
         </Style>
 
-        <Style x:Key="CardBorder" TargetType="Border">
-            <Setter Property="Background" Value="#CC1E1E1E"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="BorderBrush" Value="#FF333333"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.4"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
+        <!-- ── Text input ──────────────────────────────────────────────────── -->
         <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#232323"/>
+            <Setter Property="Foreground" Value="{StaticResource Ronin.TextBright}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource Ronin.Cyan}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Padding" Value="8,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                BorderBrush="#FF555555" BorderThickness="1" CornerRadius="3">
+                                BorderBrush="{StaticResource Ronin.BorderHover}" BorderThickness="1" CornerRadius="3">
                             <ScrollViewer x:Name="PART_ContentHost"/>
                         </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="WideDropDownCombo" TargetType="ComboBox">
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Background" Value="#FF4C4C4C"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="50" x:Name="ButtonColumn"/>
-                            </Grid.ColumnDefinitions>
-
-                            <ToggleButton Grid.ColumnSpan="2"
-                                  Background="{TemplateBinding Background}"
-                                  BorderBrush="#FF555555"
-                                  BorderThickness="1"
-                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="5"/>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                            </ToggleButton>
-
-                            <TextBox x:Name="PART_EditableTextBox"
-                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                             Margin="0,0,0,0"
-                             Focusable="True"
-                             Background="Transparent"
-                             Foreground="{TemplateBinding Foreground}"
-                             BorderThickness="0"
-                             IsReadOnly="{TemplateBinding IsReadOnly}"
-                             FontSize="{TemplateBinding FontSize}"
-                             FontFamily="{TemplateBinding FontFamily}"/>
-
-                            <Border Grid.Column="1" Background="#FF3E3E42" CornerRadius="0,5,5,0"
-                            BorderBrush="#FF555555" BorderThickness="1,0,0,0" IsHitTestVisible="False">
-                                <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-
-                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
-                           AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
-                                <Border x:Name="DropDownBorder" Background="#FF1E1E1E" BorderBrush="#FF555555"
-                                BorderThickness="1" CornerRadius="5"
-                                MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                MinWidth="{TemplateBinding ActualWidth}">
-                                    <ScrollViewer Margin="4" SnapsToDevicePixels="True">
-                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="HasItems" Value="false">
-                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
-                            </Trigger>
-                            <Trigger Property="IsGrouping" Value="true">
-                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource Ronin.CyanBright}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ── DataGrid column headers (applies to every grid automatically) ──
+             WPF's default header chrome ignores plain Background/Foreground setters,
+             same reason buttons/tabs above need a full ControlTemplate. -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#0C0C0C"/>
+            <Setter Property="Foreground" Value="{StaticResource Ronin.TextMid}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource Ronin.BorderSubtle}"
+                                BorderThickness="0,0,1,1">
+                            <Grid Margin="{TemplateBinding Padding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" VerticalAlignment="Center"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                <Path x:Name="SortArrow" Grid.Column="1" Width="8" Height="6"
+                                      Margin="4,0,2,0" VerticalAlignment="Center" Stretch="Fill"
+                                      Fill="{StaticResource Ronin.CyanBright}" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="SortDirection" Value="Ascending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,4 L 4,0 L 8,4 Z"/>
+                            </Trigger>
+                            <Trigger Property="SortDirection" Value="Descending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,0 L 4,4 L 8,0 Z"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Left tab strip: bordered, rounded-top, cyan outline ───────────── -->
+        <Style x:Key="RoninTab" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource Ronin.TextBright}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd"
+                                Margin="3,3,0,0"
+                                Padding="14,6"
+                                CornerRadius="5,5,0,0"
+                                BorderThickness="1"
+                                BorderBrush="{StaticResource Ronin.CyanDim}"
+                                Background="#0C0C0C">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource Ronin.HoverBg}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Ronin.Cyan}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource Ronin.SelectBg}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Ronin.CyanBright}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Ronin.CyanBright}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Modern thin rounded scrollbar (applies everywhere automatically) ── -->
+        <Style x:Key="RoninScrollBarThumb" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBorder" Background="#5A5A5A" CornerRadius="4"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#7A7A7A"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="{StaticResource Ronin.CyanBright}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RoninRepeatButton" TargetType="RepeatButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
+            <Setter Property="MinHeight" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track"
+                                   Orientation="{TemplateBinding Orientation}">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Style="{StaticResource RoninRepeatButton}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Style="{StaticResource RoninRepeatButton}"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource RoninScrollBarThumb}" Margin="2"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
-    <Grid>
-        <Grid.Background>
-            <ImageBrush ImageSource="pack://application:,,,/assets/images/RoninLogo.jpg" Opacity="0.335"/>
-        </Grid.Background>
-
+    <Grid Background="#0A0A0A">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>              <!-- search bar     -->
+            <RowDefinition Height="*"/>                 <!-- main content   -->
+            <RowDefinition Height="Auto"/>               <!-- status bar     -->
+            <RowDefinition Height="5"/>                  <!-- splitter       -->
+            <RowDefinition Height="185" MinHeight="60"/> <!-- console        -->
         </Grid.RowDefinitions>
 
-        <!-- Top cards row -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,30,10,10">
+        <!-- ══════════════════════════════════════════════════ SEARCH BAR -->
+        <Border Grid.Row="0"
+                BorderBrush="{StaticResource Ronin.Border}"
+                BorderThickness="0,0,0,1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#111111" Offset="0"/>
+                    <GradientStop Color="#0A0A0A" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid Margin="12,8,12,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- Server Configuration card -->
-            <Border Style="{StaticResource CardBorder}" Width="450" VerticalAlignment="Top">
-                <StackPanel Margin="25">
-                    <Label Content="SERVER CONFIGURATION" Foreground="#FFFC6617"
-                       FontFamily="Segoe UI Semibold" FontSize="16" Margin="0,0,0,15"/>
+                <DockPanel Grid.Row="0" LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            x:Name="RefreshBtn" Click="RefreshBtn_Click"
+                            Content="🔄  Refresh" Width="100" Margin="6,0,0,0"
+                            Style="{StaticResource OutlineButton}"
+                            ToolTip="Re-scan Windows Firewall rules and live listening ports"/>
+                    <CheckBox DockPanel.Dock="Right"
+                              x:Name="chkShowAll"
+                              Content="Show all rules" Foreground="{StaticResource Ronin.TextMid}"
+                              FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"
+                              Checked="chkShowAll_Changed" Unchecked="chkShowAll_Changed"
+                              ToolTip="Include disabled rules and rules with no specific port (wildcard/program-based)"/>
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="🔍" FontSize="15"
+                               Foreground="{StaticResource Ronin.Orange}"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox x:Name="txtSearch"
+                             FontSize="13" VerticalContentAlignment="Center"
+                             TextChanged="txtSearch_TextChanged"
+                             ToolTip="Search by rule name, port number, or the process currently using a port"/>
+                </DockPanel>
 
-                    <TextBlock Text="Server Name" Foreground="White" Opacity="0.7" FontSize="18" Margin="0,0,0,8"/>
-                    <ComboBox x:Name="ServerCombo"
-                        Style="{StaticResource WideDropDownCombo}"
-                        IsEditable="True"
-                        Height="45"
-                        FontSize="16"
-                        FontFamily="Segoe UI"
-                        VerticalContentAlignment="Center"
-                        SelectionChanged="ServerCombo_SelectionChanged">
-                        <ComboBox.ItemContainerStyle>
-                            <Style TargetType="ComboBoxItem">
-                                <Setter Property="Padding" Value="10,5"/>
-                                <Setter Property="Height" Value="35"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Style>
-                        </ComboBox.ItemContainerStyle>
-                    </ComboBox>
+                <TextBlock Grid.Row="1"
+                           x:Name="SearchBarStatus"
+                           Text="Ready."
+                           FontSize="11" Margin="0,4,0,0"
+                           Foreground="{StaticResource Ronin.CyanDim}"/>
+            </Grid>
+        </Border>
 
-                    <TextBlock Text="Ports" Foreground="White" Opacity="0.7" FontSize="18" Margin="0,25,0,8"/>
-                    <TextBox x:Name="txtPorts" Height="39" Background="#FF2D2D30" Foreground="White"
-                         BorderThickness="0" Padding="10,0" FontSize="16" VerticalContentAlignment="Center"
-                         ToolTip="Options: Single, Separated by comma, or range (i.e 1234; 1234,1235; 1234-1235)"/>
-                </StackPanel>
-            </Border>
+        <!-- ═════════════════════════════ RULE LISTS + ACTION PANEL SPLIT -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="320"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="340" MinWidth="300"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- Network & Actions card -->
-            <Border Style="{StaticResource CardBorder}" Width="350" VerticalAlignment="Top">
-                <StackPanel Margin="25">
-                    <Label Content="NETWORK &amp; ACTIONS" Foreground="#FFFC6617"
-                       FontFamily="Segoe UI Semibold" FontSize="16" Margin="0,0,0,15"/>
+            <!-- ────────────────────────────────────── LEFT: RULE LISTS -->
+            <TabControl Grid.Column="0"
+                        x:Name="LeftTabs"
+                        Background="#080808"
+                        BorderThickness="0"
+                        SelectionChanged="LeftTabs_SelectionChanged">
 
-                    <!-- Protocol checkboxes -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15" HorizontalAlignment="Center">
-                        <CheckBox x:Name="chkTCP" Content="TCP" Foreground="White" Margin="0,0,60,0" VerticalAlignment="Center">
-                            <CheckBox.LayoutTransform>
-                                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
-                            </CheckBox.LayoutTransform>
-                        </CheckBox>
-                        <CheckBox x:Name="chkUDP" Content="UDP" Foreground="White" VerticalAlignment="Center">
-                            <CheckBox.LayoutTransform>
-                                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
-                            </CheckBox.LayoutTransform>
-                        </CheckBox>
-                    </StackPanel>
+                <TabControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </TabControl.ItemsPanel>
 
-                    <!-- Outbound toggle -->
-                    <CheckBox x:Name="chkOutbound" Content="Also add Outbound rules" Foreground="#FFAAAAAA"
-                              HorizontalAlignment="Center" Margin="0,0,0,20" FontSize="13">
-                        <CheckBox.LayoutTransform>
-                            <ScaleTransform ScaleX="1.2" ScaleY="1.2"/>
-                        </CheckBox.LayoutTransform>
-                    </CheckBox>
+                <TabControl.ItemContainerStyle>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource RoninTab}"/>
+                </TabControl.ItemContainerStyle>
 
-                    <!-- Apply / Remove -->
-                    <UniformGrid Columns="2" Height="50" Margin="0,0,0,10">
+                <!-- ══════════════════════════════ TAB: ALL FIREWALL RULES -->
+                <TabItem Header="Firewall Rules">
+                    <DataGrid x:Name="AllRulesGrid"
+                              SelectionChanged="AllRulesGrid_SelectionChanged"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              Background="#080808"
+                              Foreground="#C8C8C8"
+                              BorderThickness="0"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="{StaticResource Ronin.BorderSubtle}"
+                              RowBackground="#080808"
+                              AlternatingRowBackground="#0D0D0D"
+                              ColumnHeaderHeight="26"
+                              HeadersVisibility="Column"
+                              FontSize="12"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header=""         Binding="{Binding OwnerIcon}"   Width="28"/>
+                            <DataGridTextColumn Header="Name"     Binding="{Binding Name}"        Width="*"/>
+                            <DataGridTextColumn Header="Dir"      Binding="{Binding Direction}"    Width="50"/>
+                            <DataGridTextColumn Header="Protocol" Binding="{Binding Protocol}"     Width="65"/>
+                            <DataGridTextColumn Header="Ports"    Binding="{Binding LocalPorts}"   Width="120"/>
+                            <DataGridTextColumn Header="Profile"  Binding="{Binding Profile}"      Width="90"/>
+                            <DataGridTextColumn Header="Process"  Binding="{Binding ProcessName}"  Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+
+                <!-- ══════════════════════════════════ TAB: PORTIER PORTS -->
+                <TabItem Header="Portier Ports">
+                    <DataGrid x:Name="PortierGrid"
+                              SelectionChanged="PortierGrid_SelectionChanged"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              Background="#080808"
+                              Foreground="#C8C8C8"
+                              BorderThickness="0"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="{StaticResource Ronin.BorderSubtle}"
+                              RowBackground="#080808"
+                              AlternatingRowBackground="#0D0D0D"
+                              ColumnHeaderHeight="26"
+                              HeadersVisibility="Column"
+                              FontSize="12"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header=""         Binding="{Binding StatusIcon}" Width="28"/>
+                            <DataGridTextColumn Header="Name"     Binding="{Binding Name}"       Width="*"/>
+                            <DataGridTextColumn Header="Ports"    Binding="{Binding Ports}"      Width="120"/>
+                            <DataGridCheckBoxColumn Header="TCP"  Binding="{Binding UseTCP}"     Width="40"/>
+                            <DataGridCheckBoxColumn Header="UDP"  Binding="{Binding UseUDP}"     Width="40"/>
+                            <DataGridCheckBoxColumn Header="Out"  Binding="{Binding UseOutbound}" Width="40"/>
+                            <DataGridTextColumn Header="Process"  Binding="{Binding ProcessName}" Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+
+            </TabControl>
+
+            <!-- ──────────────────────────────────── COLUMN SPLITTER -->
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch">
+                <GridSplitter.Style>
+                    <Style TargetType="GridSplitter">
+                        <Setter Property="Background" Value="{StaticResource Ronin.Border}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource Ronin.BorderHover}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </GridSplitter.Style>
+            </GridSplitter>
+
+            <!-- ─────────────────────────────────── RIGHT: ACTION PANEL -->
+            <Grid Grid.Column="2" Background="{StaticResource Ronin.PanelBg}">
+
+                <!-- ══ Add / Edit Portier profile ══════════════════════════ -->
+                <ScrollViewer x:Name="AddEditPanel" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="14,10,14,14">
+
+                        <TextBlock x:Name="AddEditHeader" Text="ADD NEW RULE"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Ronin.CyanBright}"/>
+
+                        <TextBlock Text="RULE NAME" Style="{StaticResource SectionLabel}"/>
+                        <TextBox x:Name="txtRuleName" Height="34" FontSize="14"/>
+
+                        <TextBlock Text="PORTS" Style="{StaticResource SectionLabel}"/>
+                        <TextBox x:Name="txtRulePorts" Height="34" FontSize="14"
+                                 ToolTip="Single, comma-separated, or range (e.g. 27015; 27015,27016; 27015-27030)"/>
+
+                        <TextBlock Text="PROTOCOL" Style="{StaticResource SectionLabel}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox x:Name="chkTCP" Content="TCP" Style="{StaticResource FlagCheck}" Margin="0,3,20,3"/>
+                            <CheckBox x:Name="chkUDP" Content="UDP" Style="{StaticResource FlagCheck}"/>
+                        </StackPanel>
+                        <CheckBox x:Name="chkOutbound" Content="Also add outbound rules"
+                                  Style="{StaticResource FlagCheck}"/>
+
+                        <Separator Background="{StaticResource Ronin.BorderSubtle}" Margin="0,12,0,0"/>
+
                         <Button x:Name="ApplyBtn" Content="APPLY" Click="btnApply_Click"
-                                Style="{StaticResource ApplyButton}" Margin="0,0,8,0" FontSize="20"/>
-                        <Button x:Name="RemoveBtn" Content="REMOVE" Click="btnRemove_Click"
-                                Style="{StaticResource DangerButton}" Margin="8,0,0,0" FontSize="20"/>
-                    </UniformGrid>
+                                Style="{StaticResource ApplyButton}" Height="38" FontSize="16" Margin="0,12,0,0"/>
 
-                    <!-- Duplicate -->
-                    <Button x:Name="DuplicateBtn" Content="⧉  DUPLICATE PROFILE" Click="btnDuplicate_Click"
-                            Style="{StaticResource OutlineButton}" Height="35" Margin="0,5,0,0"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                        <!-- Only shown when an existing Portier profile is selected -->
+                        <StackPanel x:Name="PortierEditButtons" Visibility="Collapsed">
+                            <Button x:Name="RemoveBtn" Content="REMOVE" Click="btnRemove_Click"
+                                    Style="{StaticResource DangerButton}" Height="34" Margin="0,8,0,0"/>
+                            <Button x:Name="DuplicateBtn" Content="⧉  DUPLICATE PROFILE" Click="btnDuplicate_Click"
+                                    Style="{StaticResource OutlineButton}" Height="32" Margin="0,6,0,0"/>
+                        </StackPanel>
 
-        <!-- Console -->
-        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="20,10,20,20">
-            <RichTextBox x:Name="ConsoleRTB" Background="Transparent" Foreground="#FF00FF00"
-                     BorderThickness="0" FontFamily="Consolas" FontSize="15" FontWeight="Medium" Padding="15"
-                     VerticalScrollBarVisibility="Auto">
-                <FlowDocument>
-                    <Paragraph>Ready for Ronin Command...</Paragraph>
-                </FlowDocument>
-            </RichTextBox>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ══ Foreign (non-Portier) rule inspector ════════════════ -->
+                <ScrollViewer x:Name="ForeignRulePanel" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                    <StackPanel Margin="14,10,14,14">
+
+                        <TextBlock Text="FIREWALL RULE" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Ronin.CyanBright}"/>
+
+                        <Border Background="#0D0D0D"
+                                BorderBrush="{StaticResource Ronin.BorderSubtle}"
+                                BorderThickness="1" CornerRadius="3"
+                                Padding="10,8" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock x:Name="ForeignName" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E8E8E8" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ForeignDetails" FontSize="12" Margin="0,4,0,0"
+                                           Foreground="{StaticResource Ronin.CyanBright}" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ForeignProcess" FontSize="11" Margin="0,4,0,0"
+                                           Foreground="{StaticResource Ronin.TextMid}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Separator Background="{StaticResource Ronin.BorderSubtle}" Margin="0,12,0,0"/>
+
+                        <Button x:Name="UseAsTemplateBtn" Content="📋  USE AS TEMPLATE" Click="btnUseAsTemplate_Click"
+                                Style="{StaticResource OutlineButton}" Height="32" Margin="0,10,0,0"
+                                ToolTip="Copy this rule's name and ports into the Add Rule form"/>
+                        <Button x:Name="RemoveForeignBtn" Content="REMOVE" Click="btnRemoveForeign_Click"
+                                Style="{StaticResource DangerButton}" Height="34" Margin="0,8,0,0"/>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+            </Grid>
+        </Grid>
+
+        <!-- ══════════════════════════════════════════════════ STATUS BAR -->
+        <Border Grid.Row="2"
+                Background="#0A0A0A"
+                BorderBrush="{StaticResource Ronin.BorderSubtle}"
+                BorderThickness="0,1,0,1"
+                Padding="12,4">
+            <TextBlock x:Name="StatusBarText"
+                       FontSize="11" FontFamily="Consolas"
+                       Foreground="{StaticResource Ronin.TextBright}"
+                       Text="Profiles: 0  |  Active: 0  |  Firewall Rules: 0"/>
         </Border>
 
-        <!-- Status bar -->
-        <Border Grid.Row="2" Background="#0D0D0D" BorderBrush="#FF2A2A2A" BorderThickness="0,1,0,0" Padding="20,6">
-            <TextBlock x:Name="StatusBarText" Foreground="#FF666666" FontFamily="Consolas" FontSize="12"
-                       Text="Profiles: 0  |  Active: 0"/>
+        <!-- ══════════════════════════════════════ HORIZONTAL SPLITTER -->
+        <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch">
+            <GridSplitter.Style>
+                <Style TargetType="GridSplitter">
+                    <Setter Property="Background" Value="{StaticResource Ronin.Border}"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Ronin.BorderHover}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </GridSplitter.Style>
+        </GridSplitter>
+
+        <!-- ══════════════════════════════════════════════════════ CONSOLE -->
+        <Border Grid.Row="4"
+                Background="{StaticResource Ronin.ConsoleBg}"
+                BorderBrush="{StaticResource Ronin.Border}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="OUTPUT"
+                           FontSize="9" FontWeight="Bold"
+                           Foreground="{StaticResource Ronin.Orange}"
+                           Margin="10,5,0,2"/>
+
+                <RichTextBox Grid.Row="1" x:Name="ConsoleRTB"
+                             Background="Transparent" Foreground="{StaticResource Ronin.Cyan}"
+                             BorderThickness="0" FontFamily="Consolas" FontSize="12"
+                             Padding="10,0,10,8"
+                             VerticalScrollBarVisibility="Auto">
+                    <FlowDocument>
+                        <Paragraph>Ready for Ronin Command...</Paragraph>
+                    </FlowDocument>
+                </RichTextBox>
+            </Grid>
         </Border>
+
     </Grid>
 </Window>
