@@ -16,7 +16,7 @@ While this can be used and was primarily built to simplify the set-up for game s
 ---
 
 ## 🚀 Quick Start
-1. **Download:** Go to the [Releases](https://github.com/PhonicSpider/Ronin-Portier/releases/latest) page and download the latest `Ronin_Portier_V*.zip`.
+1. **Download:** Grab [`Ronin_Portier.zip`](https://github.com/PhonicSpider/Ronin-Portier/releases/latest/download/Ronin_Portier.zip) directly, or go to the [Releases](https://github.com/PhonicSpider/Ronin-Portier/releases/latest) page.
 2. **Extract:** Unzip the contents to a folder of your choice.
 3. **Run as Admin:** Right-click `Ronin Portier.exe` -> **Run as administrator**. Click **YES** on the UAC prompt and enjoy.
     * *Note: Administrative privileges are required to read and modify Windows Firewall rules.*
