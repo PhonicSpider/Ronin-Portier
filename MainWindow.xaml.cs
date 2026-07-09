@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -106,31 +107,66 @@ namespace Ronin_Portier
                 Type fwPolicy2Type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
                 INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(fwPolicy2Type);
 
-                // Remove any existing rules for this profile
-                var rulesToRemove = new List<string>();
+                bool useOutbound = chkOutbound.IsChecked == true;
+                bool wantTCP = chkTCP.IsChecked == true;
+                bool wantUDP = chkUDP.IsChecked == true;
+
+                // The only rule names Portier could have created for this profile. Matching
+                // exactly (rather than by name prefix) avoids catching an unrelated rule that
+                // happens to start with the same text, and the Grouping check makes sure we
+                // never touch anything Portier didn't create.
+                string nameTCP = $"{currentName} - TCP";
+                string nameTCPOut = $"{currentName} - TCP (Outbound)";
+                string nameUDP = $"{currentName} - UDP";
+                string nameUDPOut = $"{currentName} - UDP (Outbound)";
+                var possibleNames = new HashSet<string> { nameTCP, nameTCPOut, nameUDP, nameUDPOut };
+
+                var existingOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (INetFwRule rule in fwPolicy2.Rules)
                 {
-                    if (rule.Name != null && rule.Name.StartsWith(currentName))
-                    {
-                        rulesToRemove.Add(rule.Name);
-                        WriteLog($"Marked existing rule '{rule.Name}' for removal.", "info");
-                    }
+                    if (rule.Name != null && rule.Grouping == "Ronin Portier Rules" && possibleNames.Contains(rule.Name))
+                        existingOwned.Add(rule.Name);
                 }
-                foreach (var name in rulesToRemove)
+
+                // Rules that exist for a protocol the user is NOT currently applying — these
+                // would be silently discarded if we don't ask first.
+                var orphaned = new List<string>();
+                if (!wantTCP)
+                {
+                    if (existingOwned.Contains(nameTCP)) orphaned.Add(nameTCP);
+                    if (existingOwned.Contains(nameTCPOut)) orphaned.Add(nameTCPOut);
+                }
+                if (!wantUDP)
+                {
+                    if (existingOwned.Contains(nameUDP)) orphaned.Add(nameUDP);
+                    if (existingOwned.Contains(nameUDPOut)) orphaned.Add(nameUDPOut);
+                }
+
+                if (orphaned.Count > 0)
+                {
+                    string orphanList = string.Join("\n  • ", orphaned);
+                    var keepProceed = MessageBox.Show(
+                        $"'{currentName}' already has the following rule(s) for a protocol you haven't checked:\n\n  • {orphanList}\n\n" +
+                        "Applying now will remove them. Proceed?",
+                        "Existing Protocol Rule Will Be Removed", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    if (keepProceed != MessageBoxResult.Yes) return;
+                }
+
+                foreach (var name in existingOwned)
                 {
                     fwPolicy2.Rules.Remove(name);
                     WriteLog($"Existing rule '{name}' removed.", "info");
                 }
 
-                bool useOutbound = chkOutbound.IsChecked == true;
-
                 // Create inbound (and optionally outbound) rules
-                if (chkTCP.IsChecked == true)
+                if (wantTCP)
                 {
                     try
                     {
-                        CreateFirewallRule($"{currentName} - TCP", currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_TCP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN);
+                        CreateFirewallRule(nameTCP, currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_TCP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN);
                         WriteLog($"Inbound TCP rule applied for ports: {currentPorts}", "success");
+                        if (!WaitForRuleVisible(fwPolicy2, nameTCP))
+                            WriteLog($"'{nameTCP}' was created but Windows Firewall hasn't confirmed it yet. It should appear in the Firewall Rules list shortly — try Refresh if not.", "warning");
                     }
                     catch (Exception ex) { WriteLog($"Error applying inbound TCP rule: {ex.Message}", "error"); }
 
@@ -138,19 +174,23 @@ namespace Ronin_Portier
                     {
                         try
                         {
-                            CreateFirewallRule($"{currentName} - TCP (Outbound)", currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_TCP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT);
+                            CreateFirewallRule(nameTCPOut, currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_TCP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT);
                             WriteLog($"Outbound TCP rule applied for ports: {currentPorts}", "success");
+                            if (!WaitForRuleVisible(fwPolicy2, nameTCPOut))
+                                WriteLog($"'{nameTCPOut}' was created but Windows Firewall hasn't confirmed it yet. It should appear in the Firewall Rules list shortly — try Refresh if not.", "warning");
                         }
                         catch (Exception ex) { WriteLog($"Error applying outbound TCP rule: {ex.Message}", "error"); }
                     }
                 }
 
-                if (chkUDP.IsChecked == true)
+                if (wantUDP)
                 {
                     try
                     {
-                        CreateFirewallRule($"{currentName} - UDP", currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_UDP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN);
+                        CreateFirewallRule(nameUDP, currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_UDP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN);
                         WriteLog($"Inbound UDP rule applied for ports: {currentPorts}", "success");
+                        if (!WaitForRuleVisible(fwPolicy2, nameUDP))
+                            WriteLog($"'{nameUDP}' was created but Windows Firewall hasn't confirmed it yet. It should appear in the Firewall Rules list shortly — try Refresh if not.", "warning");
                     }
                     catch (Exception ex) { WriteLog($"Error applying inbound UDP rule: {ex.Message}", "error"); }
 
@@ -158,8 +198,10 @@ namespace Ronin_Portier
                     {
                         try
                         {
-                            CreateFirewallRule($"{currentName} - UDP (Outbound)", currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_UDP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT);
+                            CreateFirewallRule(nameUDPOut, currentPorts, NET_FW_IP_PROTOCOL_.NET_FW_IP_PROTOCOL_UDP, NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_OUT);
                             WriteLog($"Outbound UDP rule applied for ports: {currentPorts}", "success");
+                            if (!WaitForRuleVisible(fwPolicy2, nameUDPOut))
+                                WriteLog($"'{nameUDPOut}' was created but Windows Firewall hasn't confirmed it yet. It should appear in the Firewall Rules list shortly — try Refresh if not.", "warning");
                         }
                         catch (Exception ex) { WriteLog($"Error applying outbound UDP rule: {ex.Message}", "error"); }
                     }
@@ -375,6 +417,22 @@ namespace Ronin_Portier
             fwPolicy2.Rules.Add(rule);
         }
 
+        // Windows Firewall can take a moment to make a just-added rule queryable again.
+        // Poll briefly rather than assuming it's immediately visible after Rules.Add().
+        private bool WaitForRuleVisible(INetFwPolicy2 fwPolicy2, string ruleName, int maxAttempts = 5, int delayMs = 100)
+        {
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                try
+                {
+                    if (fwPolicy2.Rules.Item(ruleName) != null) return true;
+                }
+                catch { /* not visible yet — retry */ }
+                Thread.Sleep(delayMs);
+            }
+            return false;
+        }
+
         private void SaveServers()
         {
             try
@@ -435,6 +493,7 @@ namespace Ronin_Portier
                 Type fwPolicy2Type = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
                 INetFwPolicy2 fwPolicy2 = (INetFwPolicy2)Activator.CreateInstance(fwPolicy2Type);
                 bool showAll = chkShowAll.IsChecked == true;
+                int skipped = 0;
 
                 foreach (INetFwRule rule in fwPolicy2.Rules)
                 {
@@ -455,8 +514,11 @@ namespace Ronin_Portier
                             ProcessName = hasPorts ? FindProcessForPorts(rule.LocalPorts, portMap) : ""
                         });
                     }
-                    catch { /* skip rules that throw on read (some store-app rules do) */ }
+                    catch { skipped++; /* some store-app rules throw on read — count, don't fail the whole scan */ }
                 }
+
+                if (skipped > 0)
+                    WriteLog($"Skipped {skipped} firewall rule(s) that couldn't be read while refreshing the list.", "warning");
             }
             catch (Exception ex)
             {

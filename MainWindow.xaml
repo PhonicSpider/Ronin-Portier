@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ronin_Portier"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="Ronin Portier" Height="720" Width="1150"
         MinHeight="560" MinWidth="900"
@@ -228,15 +229,27 @@
             </Setter>
         </Style>
 
-        <!-- ── Modern thin rounded scrollbar (applies everywhere automatically) ── -->
+        <!-- ── Modern thin rounded scrollbar (applies everywhere automatically) ──
+             DataGrid/ScrollViewer reserve their scrollbar column width from the
+             SystemParameters keys below (a DynamicResource lookup baked into their
+             default chrome), not from this Style's Width setter alone — override
+             both so the reserved space actually matches what we draw into it. -->
+        <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">14</sys:Double>
+        <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarHeightKey}">14</sys:Double>
+
         <Style x:Key="RoninScrollBarThumb" TargetType="Thumb">
+            <!-- Track sizes the thumb proportionally to visible/total content, which on a long
+                 list (e.g. 130+ firewall rules) can shrink it to just a few pixels. Force a floor
+                 so it stays visible and grippable regardless of list length. -->
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="MinWidth"  Value="30"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="ThumbBorder" Background="#5A5A5A" CornerRadius="4"/>
+                        <Border x:Name="ThumbBorder" Background="#888888" CornerRadius="5"/>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ThumbBorder" Property="Background" Value="#7A7A7A"/>
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#AAAAAA"/>
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
                                 <Setter TargetName="ThumbBorder" Property="Background" Value="{StaticResource Ronin.CyanBright}"/>
@@ -259,15 +272,12 @@
 
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Width" Value="10"/>
-            <Setter Property="Height" Value="10"/>
-            <Setter Property="MinWidth" Value="10"/>
-            <Setter Property="MinHeight" Value="10"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
                         <Grid Background="{TemplateBinding Background}">
                             <Track x:Name="PART_Track"
+                                   IsDirectionReversed="True"
                                    Orientation="{TemplateBinding Orientation}">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="ScrollBar.PageUpCommand" Style="{StaticResource RoninRepeatButton}"/>
@@ -276,13 +286,26 @@
                                     <RepeatButton Command="ScrollBar.PageDownCommand" Style="{StaticResource RoninRepeatButton}"/>
                                 </Track.IncreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb Style="{StaticResource RoninScrollBarThumb}" Margin="2"/>
+                                    <Thumb Style="{StaticResource RoninScrollBarThumb}" Margin="3,1"/>
                                 </Track.Thumb>
                             </Track>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <!-- Only constrain the cross-axis (thickness). The scroll-axis dimension must stay
+                 free to stretch and fill the track's full length — setting both Width and Height
+                 here would cap the whole scrollbar (not just the thumb) to a tiny fixed box. -->
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <Setter Property="Width" Value="14"/>
+                    <Setter Property="MinWidth" Value="14"/>
+                </Trigger>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Height" Value="14"/>
+                    <Setter Property="MinHeight" Value="14"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
     </Window.Resources>
